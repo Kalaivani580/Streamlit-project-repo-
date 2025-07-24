@@ -1,28 +1,37 @@
 import streamlit as st
-from AreaCalculator import area_of_circle, area_of_rectangle, area_of_triangle
-from langchain_helper import explain_area_formula
+from openai import OpenAI
+import os
+from dotenv import load_dotenv
 
-if st.checkbox("Want to know how it works?"):
-    st.info(explain_area_formula(shape))
+load_dotenv()
+openai_api_key = os.getenv("OPENAI_API_KEY")
+client = OpenAI(api_key=openai_api_key)
 
+st.set_page_config(page_title="Saschic Content Generator")
+st.title("✨ Saschic Content Generator")
 
-st.title("🧮 Area Calculator")
+content_type = st.selectbox(
+    "What do you want to generate?",
+    ["Instagram Caption", "Short Story", "Tagline"]
+)
 
-shape = st.selectbox("Choose a shape", ["Circle", "Rectangle", "Triangle"])
+product_name = st.text_input("Enter Product or Theme Name (e.g., Wooden Gift Frame)")
+audience = st.text_input("Target Audience (e.g., Couples, Kids, Friends, etc.)")
 
-if shape == "Circle":
-    radius = st.number_input("Enter radius", min_value=0.0)
-    if st.button("Calculate"):
-        st.success(f"Area of Circle: {area_of_circle(radius):.2f}")
+if st.button("Generate"):
+    with st.spinner("Generating with magic..."):
+        prompt = ""
 
-elif shape == "Rectangle":
-    length = st.number_input("Enter length", min_value=0.0)
-    width = st.number_input("Enter width", min_value=0.0)
-    if st.button("Calculate"):
-        st.success(f"Area of Rectangle: {area_of_rectangle(length, width):.2f}")
+        if content_type == "Instagram Caption":
+            prompt = f"Write an Instagram caption for a product called '{product_name}' for {audience}. Make it emotional or fun."
+        elif content_type == "Short Story":
+            prompt = f"Write a short, simple story (max 5 lines) about '{product_name}' that would interest {audience}. Use friendly and engaging tone."
+        elif content_type == "Tagline":
+            prompt = f"Write a catchy one-line Instagram tagline for a product called '{product_name}', targeting {audience}."
 
-elif shape == "Triangle":
-    base = st.number_input("Enter base", min_value=0.0)
-    height = st.number_input("Enter height", min_value=0.0)
-    if st.button("Calculate"):
-        st.success(f"Area of Triangle: {area_of_triangle(base, height):.2f}")
+        response = client.chat.completions.create(
+            model="gpt-4",
+            messages=[{"role": "user", "content": prompt}]
+        )
+        st.success("Here is your generated content:")
+        st.write(response.choices[0].message.content)
